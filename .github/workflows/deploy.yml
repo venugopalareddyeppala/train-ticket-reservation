@@ -36,7 +36,7 @@ steps:
         name: trainbook-war
         path: target/*.war
 
-  deploy-dev:
+deploy-dev:
   needs: build
   runs-on: ubuntu-latest
   environment: dev
