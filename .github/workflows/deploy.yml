@@ -41,7 +41,7 @@ jobs:
         run: | 
           curl -v -u "${{ secrets.DEV_TOMCAT_USER }}:${{ secrets.DEV_TOMCAT_PASSWORD }}" \
           -T target/*.war \
-          "http://${{ secrets.DEV_TOMCAT_HOST }}:8080/manager/text/deploy?path=/TrainBook&update=true"
+          "http://${{ secrets.DEV_TOMCAT_URL }}:8080/manager/text/deploy?path=/TrainBook&update=true"
   
       - name: Deploy war to tomcat in TEST
         run: | 
