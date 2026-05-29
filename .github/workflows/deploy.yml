@@ -1,4 +1,4 @@
-name: ci to build the code and deploy war file to tomcat
+name: ci to build the code and deploy war file to tomcat in different Environments
 
 on:
   push:
@@ -11,35 +11,52 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
       - name: Clean project
-    	run: mvn clean
-			  
+        run: mvn clean
+        
       - name: Validate with maven
         run: mvn validate
-			  
+        
       - name: Compile with maven
         run: mvn compile
   
       - name: Test with maven
         run: mvn test
-			  
+        
       - name: Package with maven
         run: mvn package
-			  
+        
       - name: Check war file
         run: ls -lh target/
-		  
-      - name: Deploy war to tomcat
+      
+      - name: Deploy war to tomcat in DEV
         run: | 
-          curl -v -u "${{ secrets.TOMCAT_USER }}:${{ secrets.TOMCAT_PASSWORD }}" \
+          curl -v -u "${{ secrets.DEV_TOMCAT_USER }}:${{ secrets.DEV_TOMCAT_PASSWORD }}" \
           -T target/*.war \
-          "http://${{ secrets.TOMCAT_HOST }}:8080/manager/text/deploy?path=/TrainBook&update=true"
+          "http://${{ secrets.DEV_TOMCAT_HOST }}:8080/manager/text/deploy?path=/TrainBook&update=true"
   
+      - name: Deploy war to tomcat in TEST
+        run: | 
+          curl -v -u "${{ secrets.TEST_TOMCAT_USER }}:${{ secrets.TEST_TOMCAT_PASSWORD }}" \
+          -T target/*.war \
+          "http://${{ secrets.TEST_TOMCAT_HOST }}:8080/manager/text/deploy?path=/TrainBook&update=true"
+
+      - name: Deploy war to tomcat in PREPROD
+        run: | 
+          curl -v -u "${{ secrets.PREPROD_TOMCAT_USER }}:${{ secrets.PREPROD_TOMCAT_PASSWORD }}" \
+          -T target/*.war \
+          "http://${{ secrets.PREPROD_TOMCAT_HOST }}:8080/manager/text/deploy?path=/TrainBook&update=true"
+  
+      - name: Deploy war to tomcat in PROD
+        run: | 
+          curl -v -u "${{ secrets.PROD_TOMCAT_USER }}:${{ secrets.PROD_TOMCAT_PASSWORD }}" \
+          -T target/*.war \
+          "http://${{ secrets.PROD_TOMCAT_HOST }}:8080/manager/text/deploy?path=/TrainBook&update=true"
