@@ -20,7 +20,7 @@ jobs:
           java-version: '17'
 
       - name: Clean project
-        run: mvn clean
+    	run: mvn clean
 			  
       - name: Validate with maven
         run: mvn validate
