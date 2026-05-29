@@ -1,130 +1,58 @@
-name: CI Build and Deploy to Tomcat
-
+name: ci to build the code and deploy war file to tomcat in different Environments
 on:
   push:
-    branches:
-      - master
-
+      branches: master
+			
 jobs:
-  build:
-    name: Build WAR
-    runs-on: ubuntu-latest
+  deploy:
+    run-on: ubuntu-latest
 
-    steps:
-      - name: Checkout Source Code
-        uses: actions/checkout@v4
+steps:
+- name: chuckout code
+  uses: actions/checkout@v5
 
-      - name: Setup Java 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
+- name:  set-up jdk 17
+  uses: actions/setup-jdk@v5
+  with:
+  distribution: 'temurin'
+  java-version: '17'
+			  
+- name: validate with maven
+  run: mvn validate
+			  
+- name: compile with maven
+  run: mvn compile
+  
+- name: test with maven
+  run: mvn test
+			  
+- name: package with maven
+  run: mvn package
+			  
+- name: check war file
+  run: ls -lh target/
+		  
+		
+- name: deploy war to tomcat in DEV
+  run: | 
+    curl -v -u ${{ secrets.DEV_TOMCAT_USER }}:${{ secrets.DEV_TOMCAT_PASSWORD }} \
+    -T target/TrainBook-1.0.0-SNAPSHOT.war \
+    "http://${{ secrets.DEV_TOMCAT_HOST }}:8080/manager/text/deploy?path=/TrainBook&update=true"
+  
+- name: deploy war to tomcat in TEST
+  run: | 
+    curl -v -u ${{ secrets.TEST_TOMCAT_USER }}:${{ secrets.TEST_TOMCAT_PASSWORD }} \
+    -T target/TrainBook-1.0.0-SNAPSHOT.war \
+    "http://${{ secrets.TEST_TOMCAT_HOST }}:8080/manager/text/deploy?path=/TrainBook&update=true"
 
-      - name: Validate Project
-        run: mvn validate
-
-      - name: Compile Project
-        run: mvn compile
-
-      - name: Run Tests
-        run: mvn test
-
-      - name: Build WAR Package
-        run: mvn clean package
-
-      - name: Verify Build Artifacts
-        run: ls -la target/
-
-      - name: Upload WAR Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: trainbook-war
-          path: target/*.war
-
-  deploy-dev:
-    name: Deploy to DEV
-    needs: build
-    runs-on: ubuntu-latest
-    environment: dev
-
-    steps:
-      - name: Download WAR Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: trainbook-war
-          path: target
-
-      - name: Deploy to DEV Tomcat
-        run: |
-          WAR_FILE=$(find target -name "*.war" | head -n 1)
-
-          curl -v \
-            -u "${{ secrets.TOMCAT_USER }}:${{ secrets.TOMCAT_PASSWORD }}" \
-            -T "$WAR_FILE" \
-            "http://${{ secrets.DEV_TOMCAT_HOST }}:8080/manager/text/deploy?path=/TrainBook&update=true"
-
-  deploy-test:
-    name: Deploy to TEST
-    needs: deploy-dev
-    runs-on: ubuntu-latest
-    environment: test
-
-    steps:
-      - name: Download WAR Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: trainbook-war
-          path: target
-
-      - name: Deploy to TEST Tomcat
-        run: |
-          WAR_FILE=$(find target -name "*.war" | head -n 1)
-
-          curl -v \
-            -u "${{ secrets.TOMCAT_USER }}:${{ secrets.TOMCAT_PASSWORD }}" \
-            -T "$WAR_FILE" \
-            "http://${{ secrets.TEST_TOMCAT_HOST }}:8080/manager/text/deploy?path=/TrainBook&update=true"
-
-  deploy-preprod:
-    name: Deploy to PREPROD
-    needs: deploy-test
-    runs-on: ubuntu-latest
-    environment: preprod
-
-    steps:
-      - name: Download WAR Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: trainbook-war
-          path: target
-
-      - name: Deploy to PREPROD Tomcat
-        run: |
-          WAR_FILE=$(find target -name "*.war" | head -n 1)
-
-          curl -v \
-            -u "${{ secrets.TOMCAT_USER }}:${{ secrets.TOMCAT_PASSWORD }}" \
-            -T "$WAR_FILE" \
-            "http://${{ secrets.PREPROD_TOMCAT_HOST }}:8080/manager/text/deploy?path=/TrainBook&update=true"
-
-  deploy-prod:
-    name: Deploy to PROD
-    needs: deploy-preprod
-    runs-on: ubuntu-latest
-    environment: prod
-
-    steps:
-      - name: Download WAR Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: trainbook-war
-          path: target
-
-      - name: Deploy to PROD Tomcat
-        run: |
-          WAR_FILE=$(find target -name "*.war" | head -n 1)
-
-          curl -v \
-            -u "${{ secrets.TOMCAT_USER }}:${{ secrets.TOMCAT_PASSWORD }}" \
-            -T "$WAR_FILE" \
-            "http://${{ secrets.PROD_TOMCAT_HOST }}:8080/manager/text/deploy?path=/TrainBook&update=true"
+- name: deploy war to tomcat in PREPROD
+  run: | 
+    curl -v -u ${{ secrets.PREPROD_TOMCAT_USER }}:${{ secrets.PREPROD_TOMCAT_PASSWORD }} \
+    -T target/TrainBook-1.0.0-SNAPSHOT.war \
+    "http://${{ secrets.PREPROD_TOMCAT_HOST }}:8080/manager/text/deploy?path=/TrainBook&update=true"
+  
+- name: deploy war to tomcat in PROD
+  run: | 
+    curl -v -u ${{ secrets.PROD_TOMCAT_USER }}:${{ secrets.PROD_TOMCAT_PASSWORD }} \
+    -T target/TrainBook-1.0.0-SNAPSHOT.war \
+    "http://${{ secrets.PROD_TOMCAT_HOST }}:8080/manager/text/deploy?path=/TrainBook&update=true"
