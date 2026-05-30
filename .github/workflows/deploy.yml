@@ -42,9 +42,41 @@ jobs:
 
       - name: Verify artifact
         run: |
+          echo "Current directory:"
           pwd
+
+          echo "Files:"
           ls -lah
+
+          echo "WAR files:"
           find . -name "*.war"
+
+      - name: Debug Tomcat Secrets
+        env:
+          URL: ${{ secrets.TOMCAT_URL_DEV }}
+          USER: ${{ secrets.TOMCAT_USER_DEV }}
+          PASS: ${{ secrets.TOMCAT_PASSWORD_DEV }}
+        run: |
+          echo "Checking secrets..."
+
+          if [ -z "$URL" ]; then
+            echo "ERROR: TOMCAT_URL_DEV is empty"
+            exit 1
+          fi
+
+          if [ -z "$USER" ]; then
+            echo "ERROR: TOMCAT_USER_DEV is empty"
+            exit 1
+          fi
+
+          if [ -z "$PASS" ]; then
+            echo "ERROR: TOMCAT_PASSWORD_DEV is empty"
+            exit 1
+          fi
+
+          echo "URL=[$URL]"
+          echo "USER=[$USER]"
+          echo "PASS length=${#PASS}"
 
       - name: Deploy to Tomcat DEV
         env:
@@ -52,7 +84,7 @@ jobs:
           USER: ${{ secrets.TOMCAT_USER_DEV }}
           PASS: ${{ secrets.TOMCAT_PASSWORD_DEV }}
         run: |
-          set -e
+          set -x
 
           WAR_FILE=$(find . -name "*.war" | head -1)
 
@@ -62,12 +94,11 @@ jobs:
           fi
 
           echo "Deploying WAR: $WAR_FILE"
-          echo "Tomcat URL: $URL"
 
           curl -v \
             -u "$USER:$PASS" \
             --fail \
             --upload-file "$WAR_FILE" \
-            "$URL/manager/text/deploy?path=/train-ticket-reservation&update=true"
+            "${URL}/manager/text/deploy?path=/train-ticket-reservation&update=true"
 
           echo "Deployment successful"
