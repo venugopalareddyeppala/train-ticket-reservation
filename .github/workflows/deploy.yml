@@ -14,13 +14,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Java
+      - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
+          cache: maven
 
-      - name: Build & Test with Maven
+      - name: Build and Test
         run: mvn clean verify
 
       - name: Upload WAR artifact
@@ -28,7 +29,6 @@ jobs:
         with:
           name: war-file
           path: target/*.war
-
 
   deploy-dev:
     needs: build
@@ -40,13 +40,34 @@ jobs:
         with:
           name: war-file
 
-      - name: Deploy to DEV
+      - name: Verify artifact
+        run: |
+          pwd
+          ls -lah
+          find . -name "*.war"
+
+      - name: Deploy to Tomcat DEV
         env:
           URL: ${{ secrets.TOMCAT_URL_DEV }}
           USER: ${{ secrets.TOMCAT_USER_DEV }}
           PASS: ${{ secrets.TOMCAT_PASSWORD_DEV }}
         run: |
-          WAR_FILE=$(ls *.war | head -n 1)
-          echo "Deploying $WAR_FILE to DEV ($URL)"
-          curl -u "$USER:$PASSWORD" --fail -T "$WAR_FILE" \
-            "$URL/deploy?path=/train-ticket-reservation&update=true"
+          set -e
+
+          WAR_FILE=$(find . -name "*.war" | head -1)
+
+          if [ -z "$WAR_FILE" ]; then
+            echo "ERROR: No WAR file found"
+            exit 1
+          fi
+
+          echo "Deploying WAR: $WAR_FILE"
+          echo "Tomcat URL: $URL"
+
+          curl -v \
+            -u "$USER:$PASS" \
+            --fail \
+            --upload-file "$WAR_FILE" \
+            "$URL/manager/text/deploy?path=/train-ticket-reservation&update=true"
+
+          echo "Deployment successful"
