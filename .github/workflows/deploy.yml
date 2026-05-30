@@ -1,4 +1,4 @@
-name: Build and Deploy WAR to Tomcat
+name: CI Build and Deploy WAR to Tomcat
 
 on:
   push:
@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v5
 
       - name: Set up JDK 17
@@ -19,39 +19,29 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Clean Project
+      - name: Clean project
         run: mvn clean
 
-      - name: Validate Project
+      - name: Validate with Maven
         run: mvn validate
 
-      - name: Compile Project
+      - name: Compile with Maven
         run: mvn compile
 
-      - name: Run Tests
+      - name: Test with Maven
         run: mvn test
 
-      - name: Package WAR
+      - name: Package with Maven
         run: mvn package
 
-      - name: Verify WAR File
-        run: |
-          ls -lh target/
-          find target -name "*.war"
-
-      - name: Debug Secret Availability
-        run: |
-          echo "URL exists: ${{ secrets.TOMCAT_URL != '' }}"
-          echo "USER exists: ${{ secrets.TOMCAT_USER != '' }}"
-          echo "PASSWORD exists: ${{ secrets.TOMCAT_PASSWORD != '' }}"
+      - name: Check WAR file
+        run: ls -lh target/
 
       - name: Deploy WAR to Tomcat
         run: |
           WAR_FILE=$(find target -name "*.war" | head -1)
 
-          echo "Deploying $WAR_FILE"
-
           curl -v \
             -u "${{ secrets.TOMCAT_USER }}:${{ secrets.TOMCAT_PASSWORD }}" \
             -T "$WAR_FILE" \
-            "${{ secrets.TOMCAT_URL }}/manager/text/deploy?path=/myapp&update=true"
+            "http://${{ secrets.TOMCAT_HOST }}:8080/manager/text/deploy?path=/TrainBook&update=true"
