@@ -1,104 +1,45 @@
-name: Build and Deploy train-ticket-reservation
+name: ci to scan with sonarqube
 
 on:
   push:
     branches:
-      - main
-  workflow_dispatch:
+      - master
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
-      - name: Set up Java 17
-        uses: actions/setup-java@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
-          cache: maven
 
-      - name: Build and Test
-        run: mvn clean verify
+      - name: Clean project
+        run: mvn clean
 
-      - name: Upload WAR artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: war-file
-          path: target/*.war
+      - name: Validate with Maven
+        run: mvn validate
 
-  deploy-dev:
-    needs: build
-    runs-on: ubuntu-latest
+      - name: Compile with Maven
+        run: mvn compile
 
-    steps:
-      - name: Download WAR artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: war-file
+      - name: Test with Maven
+        run: mvn test
 
-      - name: Verify artifact
+      - name: Package with Maven
+        run: mvn package
+
+      - name: Check WAR file
+        run: ls -lh target/
+
+      - name: SonarQube Scan
         run: |
-          echo "Current directory:"
-          pwd
-
-          echo "Files:"
-          ls -lah
-
-          echo "WAR files:"
-          find . -name "*.war"
-
-      - name: Debug Tomcat Secrets
-        env:
-          URL: ${{ secrets.TOMCAT_URL_DEV }}
-          USER: ${{ secrets.TOMCAT_USER_DEV }}
-          PASS: ${{ secrets.TOMCAT_PASSWORD_DEV }}
-        run: |
-          echo "Checking secrets..."
-
-          if [ -z "$URL" ]; then
-            echo "ERROR: TOMCAT_URL_DEV is empty"
-            exit 1
-          fi
-
-          if [ -z "$USER" ]; then
-            echo "ERROR: TOMCAT_USER_DEV is empty"
-            exit 1
-          fi
-
-          if [ -z "$PASS" ]; then
-            echo "ERROR: TOMCAT_PASSWORD_DEV is empty"
-            exit 1
-          fi
-
-          echo "URL=[$URL]"
-          echo "USER=[$USER]"
-          echo "PASS length=${#PASS}"
-
-      - name: Deploy to Tomcat DEV
-        env:
-          URL: ${{ secrets.TOMCAT_URL_DEV }}
-          USER: ${{ secrets.TOMCAT_USER_DEV }}
-          PASS: ${{ secrets.TOMCAT_PASSWORD_DEV }}
-        run: |
-          set -x
-
-          WAR_FILE=$(find . -name "*.war" | head -1)
-
-          if [ -z "$WAR_FILE" ]; then
-            echo "ERROR: No WAR file found"
-            exit 1
-          fi
-
-          echo "Deploying WAR: $WAR_FILE"
-
-          curl -v \
-            -u "$USER:$PASS" \
-            --fail \
-            --upload-file "$WAR_FILE" \
-            "${URL}/manager/text/deploy?path=/train-ticket-reservation&update=true"
-
-          echo "Deployment successful"
+          mvn clean verify sonar:sonar \
+            -Dsonar.projectKey=project-name \
+            -Dsonar.host.url="${{ secrets.SONAR_HOST }}" \
+            -Dsonar.login="${{ secrets.SONAR_TOKEN }}"
