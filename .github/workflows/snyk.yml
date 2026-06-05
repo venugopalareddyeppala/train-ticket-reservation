@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - master
+  pull_request:
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -29,10 +31,10 @@ jobs:
       - name: Compile with Maven
         run: mvn compile
 
-      - name: Test with Maven
+      - name: Run tests
         run: mvn test
 
-      - name: Package with Maven
+      - name: Package application
         run: mvn package
 
       - name: Check WAR file
@@ -41,10 +43,10 @@ jobs:
       - name: Install Snyk CLI
         run: npm install -g snyk
 
-      - name: Authenticate Snyk
+      - name: Verify Snyk Authentication
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        run: snyk auth $SNYK_TOKEN
+        run: snyk whoami
 
       - name: Snyk Open Source Scan
         env:
