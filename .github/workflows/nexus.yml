@@ -19,28 +19,10 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Clean project
-        run: mvn clean
-
-      - name: Validate with Maven
-        run: mvn validate
-
-      - name: Compile with Maven
-        run: mvn compile
-
-      - name: Test with Maven
-        run: mvn test
-
-      - name: Package with Maven
-        run: mvn package
-
-      - name: Check WAR file
-        run: ls -lh target/
-
       - name: Configure Maven settings.xml for Nexus
         run: |
           mkdir -p ~/.m2
-          cat <<EOF > ~/.m2/settings.xml
+          cat > ~/.m2/settings.xml << EOF
           <settings>
             <servers>
               <server>
@@ -52,7 +34,12 @@ jobs:
           </settings>
           EOF
 
-      - name: Upload Artifact to Nexus
+      - name: Build, Test and Deploy to Nexus
         run: |
-          mvn deploy \
+          mvn clean deploy \
             -DaltDeploymentRepository=nexus::default::${{ secrets.NEXUS_URL }}
+
+      - name: Verify Generated WAR
+        if: success()
+        run: |
+          ls -lh target/
