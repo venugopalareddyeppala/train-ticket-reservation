@@ -28,7 +28,7 @@ jobs:
         run: |
           mvn org.sonarsource.scanner.maven:sonar-maven-plugin:4.0.0.4121:sonar \
           -Dsonar.projectKey=TrainBook \
-          -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
+          -Dsonar.host.url=${{ secrets.SONAR_HOST }} \
           -Dsonar.token=${{ secrets.SONAR_TOKEN }}
 
       - name: Configure Maven Settings
@@ -50,7 +50,7 @@ jobs:
       - name: Upload Artifact to Nexus
         run: |
           mvn deploy \
-          -DaltDeploymentRepository=nexus::${{ secrets.NEXUS_URL }}/repository/maven-releases/
+          -DaltDeploymentRepository=nexus::${{ secrets.NEXUS_HOST }}/repository/maven-releases/
 
       - name: Find WAR File
         run: |
@@ -60,4 +60,4 @@ jobs:
         run: |
           curl -v -u "${{ secrets.TOMCAT_USERNAME }}:${{ secrets.TOMCAT_PASSWORD }}" \
           -T "$WAR_FILE" \
-          "${{ secrets.TOMCAT_URL }}/manager/text/deploy?path=/TrainBook&update=true"
+          "${{ secrets.TOMCAT_HOST }}/manager/text/deploy?path=/TrainBook&update=true"
