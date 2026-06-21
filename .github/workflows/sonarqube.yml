@@ -23,7 +23,7 @@ jobs:
 
       - name: SonarQube Analysis
         run: |
-          mvn sonar:sonar \
+          mvn org.sonarsource.scanner.maven:sonar-maven-plugin:4.0.0.4121:sonar \
           -Dsonar.projectKey=train-ticket-reservation \
-          -Dsonar.host.url=http://${{ secrets.SONAR_HOST }}:9000 \
+          -Dsonar.host.url=${{ secrets.SONAR_HOST }} \
           -Dsonar.token=${{ secrets.SONAR_TOKEN }}
