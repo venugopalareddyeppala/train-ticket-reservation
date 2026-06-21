@@ -47,10 +47,10 @@ jobs:
           </settings>
           EOF
 
-          - name: Upload Artifact to Nexus
-            run: |
-              mvn deploy \
-                -DaltDeploymentRepository=nexus::default::${{ secrets.NEXUS_HOST }}/repository/maven-snapshots/
+      - name: Upload Artifact to Nexus
+        run: |
+          mvn clean deploy \
+          -DaltDeploymentRepository=nexus::default::${{ secrets.NEXUS_HOST }}/repository/maven-snapshots/
 
       - name: Find WAR File
         run: |
