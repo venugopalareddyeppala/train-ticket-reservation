@@ -50,7 +50,7 @@ jobs:
       - name: Upload Artifact to Nexus
         run: |
           mvn deploy \
-          -DaltDeploymentRepository=nexus::${{ secrets.NEXUS_HOST }}/repository/maven-releases/
+          -DaltDeploymentRepository=nexus::${{ secrets.NEXUS_HOST }}/repository/maven-snapshots/
 
       - name: Find WAR File
         run: |
