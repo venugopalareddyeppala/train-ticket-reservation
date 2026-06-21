@@ -1,0 +1,29 @@
+name: SonarQube Analysis
+
+on:
+  workflow_run:
+    workflows:
+      - Build Application
+    types:
+      - completed
+
+jobs:
+  sonar:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: SonarQube Analysis
+        run: |
+          mvn sonar:sonar \
+          -Dsonar.projectKey=train-ticket-reservation \
+          -Dsonar.host.url=http://${{ secrets.SONAR_HOST }}:9000 \
+          -Dsonar.token=${{ secrets.SONAR_TOKEN }}
